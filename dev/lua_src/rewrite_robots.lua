@@ -70,16 +70,31 @@ end
 
 -- get filters
 local function get_mark(mark,width,height)
-    local mark_width = math.floor(width * 0.65)
-    local pos_left  = math.floor((width - mark_width)/2)
-    local pos_top   = math.floor(0.5 * height)  -- about gold rate cut height of water_mark
-    local mark_path = root .. "/mark/" .. mark .. "_" .. mark_width .. ".png"
+    local mark_width
 
-    if(file_exists(mark_path) == false) then
-        magick.thumb(root .. "/mark/" .. mark .. ".png", mark_width .. "x", mark_path)
+    if width > 0 and width < 300
+    then mark_width = nil
+    elseif width > 300 and width <= 400
+    then mark_width = 300
+    elseif width > 400 and width <= 500
+    then mark_width = 400
+    elseif width > 500 and width <= 600
+    then mark_width = 600
+    elseif width > 600 and width <= 800
+    then mark_width = 600
+    elseif width > 800 and width <= 1027
+    then mark_width = 800
+    elseif width > 1028
+    then mark_width = 900
     end
 
-    return ":watermark(/mark/" .. mark .. "_" .. mark_width .. ".png," .. pos_left .. "," .. pos_top .. ",0)"
+    if mark_width then
+        local pos_left = math.floor((width - mark_width)/2)
+        local pos_top  = math.floor(0.5 * height)  -- about gold rate cut height of water_mark
+        return ":watermark(/mark/" .. mark .. "_" .. mark_width .. ".png," .. pos_left .. "," .. pos_top .. ",0)"
+    else
+        return ''
+    end
 end
 
 local function get_cropType(type)
@@ -93,7 +108,7 @@ end
 local crop = get_cropType(type)
 local arr  = my_split(host,'.')
 local site = arr[#arr-1]
-local domain = arr[#arr-1] .. '.' .. arr[#arr]
+
 
 --check signature
 local signature = string.sub(ngx.md5(ngx.md5(site) .. width .. height .. quality .. type .. name .. '.' ..ext),0,16)
@@ -107,11 +122,9 @@ local real_path = root .. "/" .. file_path;
 
 -- begin rewrite
 local width,height = get_size(real_path,width,height)
-local filter_mark = get_mark(domain,width,height)
+local filter_mark = get_mark(site,width,height)
 local filter_quality = ":quality(" .. quality ..")"
 local filters = "filters" .. filter_mark .. filter_quality
---local filters = "filters" .. filter_quality
-
 local real_path = "/" .. thumbor_key .. "/" .. width .. "x" .. height .. "/" .. crop .. "/" .. filters .. "/" .. file_path
 
 ngx.req.set_uri(real_path, true)
